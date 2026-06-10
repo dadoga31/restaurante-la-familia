@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "restaurante-la-familia",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-l", "3500", "/Users/mymac/Desktop/restaurante-la-familia"],
+      "port": 3500
+    }
+  ]
+}
