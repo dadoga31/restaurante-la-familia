@@ -115,8 +115,8 @@ export default function AdminMenusPage() {
       if (!res.ok) throw new Error((await res.json()).error);
       const { url } = await res.json();
       setForm((p) => ({ ...p, image: url }));
-    } catch {
-      setError("Error al subir la imagen");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Error al subir la imagen");
     } finally {
       setUploading(false);
       e.target.value = "";

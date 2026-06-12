@@ -14,12 +14,12 @@ export async function PUT(
     data: {
       name,
       description: description ?? null,
-      price: parseFloat(price),
-      image: image ?? null,
+      price: parseFloat(String(price).replace(",", ".")),
+      image: image || null,
       isActive: Boolean(isActive),
       isDailyMenu: Boolean(isDailyMenu),
       categoryId: parseInt(categoryId),
-      order: order ?? 0,
+      order: parseInt(String(order ?? 0)),
     },
     include: { category: true },
   });

@@ -21,12 +21,12 @@ export async function POST(req: NextRequest) {
     data: {
       name,
       description: description ?? null,
-      price: parseFloat(price),
-      image: image ?? null,
+      price: parseFloat(String(price).replace(",", ".")),
+      image: image || null,
       isActive: isActive ?? true,
       isDailyMenu: isDailyMenu ?? false,
       categoryId: parseInt(categoryId),
-      order: order ?? 0,
+      order: parseInt(String(order ?? 0)),
     },
     include: { category: true },
   });
