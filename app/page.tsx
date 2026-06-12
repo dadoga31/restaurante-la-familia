@@ -13,11 +13,20 @@ const DAILY_IMG   = "https://images.unsplash.com/photo-1504674900247-0877df9cc83
 const CTA_IMG     = "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1920&q=80";
 
 async function getDailyMenu() {
-  return prisma.dish.findMany({
+  const dishes = await prisma.dish.findMany({
     where: { isDailyMenu: true, isActive: true },
     include: { category: true },
-    orderBy: { order: "asc" },
+    orderBy: [{ category: { order: "asc" } }, { order: "asc" }],
   });
+
+  // Group by category preserving order
+  const grouped = new Map<number, { name: string; dishes: typeof dishes }>();
+  for (const dish of dishes) {
+    const key = dish.categoryId;
+    if (!grouped.has(key)) grouped.set(key, { name: dish.category.name, dishes: [] });
+    grouped.get(key)!.dishes.push(dish);
+  }
+  return Array.from(grouped.values());
 }
 
 export const dynamic = "force-dynamic";
@@ -122,26 +131,46 @@ export default async function HomePage() {
               <div className="mt-5 h-px w-14 bg-gold-400/50 mx-auto line-reveal" />
             </AnimateOnScroll>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {dailyMenu.map((dish, i) => (
-                <AnimateOnScroll key={dish.id} animation="fade-up" delay={i * 100}>
-                  <div className="card-hover flex items-start justify-between gap-4 p-5 rounded-xl border border-white/10 bg-black/50 backdrop-blur-sm hover:border-gold-400/30">
-                    <div className="flex-1 min-w-0">
-                      <span className="text-gold-400/70 text-[10px] tracking-[0.35em] uppercase font-medium">
-                        {dish.category.name}
-                      </span>
-                      <p className="text-cream-100 font-semibold mt-1">{dish.name}</p>
-                      {dish.description && (
-                        <p className="text-cream-400 text-sm mt-1 leading-relaxed line-clamp-2">
-                          {dish.description}
-                        </p>
-                      )}
+            <div className="space-y-8">
+              {dailyMenu.map((group, gi) => (
+                <div key={group.name}>
+                  {/* Divider between categories */}
+                  {gi > 0 && (
+                    <div className="flex items-center gap-4 mb-8">
+                      <div className="flex-1 h-px bg-white/10" />
+                      <div className="w-1 h-1 rounded-full bg-gold-400/40" />
+                      <div className="flex-1 h-px bg-white/10" />
                     </div>
-                    <span className="text-gold-400 font-bold text-sm shrink-0 font-display">
-                      {dish.price.toFixed(2)}€
-                    </span>
+                  )}
+
+                  {/* Category label */}
+                  <AnimateOnScroll animation="fade-up" delay={gi * 80} className="mb-4">
+                    <p className="text-gold-400/60 text-[10px] tracking-[0.45em] uppercase font-medium">
+                      {group.name}
+                    </p>
+                  </AnimateOnScroll>
+
+                  {/* Dishes in this category */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {group.dishes.map((dish, i) => (
+                      <AnimateOnScroll key={dish.id} animation="fade-up" delay={gi * 80 + i * 80}>
+                        <div className="card-hover flex items-start justify-between gap-4 p-5 rounded-xl border border-white/10 bg-black/50 backdrop-blur-sm hover:border-gold-400/30">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-cream-100 font-semibold">{dish.name}</p>
+                            {dish.description && (
+                              <p className="text-cream-400 text-sm mt-1 leading-relaxed line-clamp-2">
+                                {dish.description}
+                              </p>
+                            )}
+                          </div>
+                          <span className="text-gold-400 font-bold text-sm shrink-0 font-display">
+                            {dish.price.toFixed(2)}€
+                          </span>
+                        </div>
+                      </AnimateOnScroll>
+                    ))}
                   </div>
-                </AnimateOnScroll>
+                </div>
               ))}
             </div>
 
