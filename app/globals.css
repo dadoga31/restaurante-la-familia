@@ -46,6 +46,9 @@ body {
 
 /* ── Date input iOS fix ── */
 input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
   max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
