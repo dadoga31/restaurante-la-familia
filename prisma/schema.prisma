@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String
+  slug      String   @unique
+  order     Int      @default(0)
+  dishes    Dish[]
+  createdAt DateTime @default(now())
+}
+
+model Dish {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  price       Float
+  image       String?
+  isActive    Boolean  @default(true)
+  isDailyMenu Boolean  @default(false)
+  category    Category @relation(fields: [categoryId], references: [id])
+  categoryId  Int
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Reservation {
+  id             Int      @id @default(autoincrement())
+  name           String
+  email          String
+  phone          String
+  date           String
+  time           String
+  guests         Int
+  specialRequest String?
+  status         String   @default("PENDING")
+  confirmCode    String   @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model BlockedSlot {
+  id   Int     @id @default(autoincrement())
+  date String
+  time String?
+}
+
+model AdminUser {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+}
