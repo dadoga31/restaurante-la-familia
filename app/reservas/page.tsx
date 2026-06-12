@@ -190,7 +190,7 @@ export default function ReservasPage() {
                     <h2 className="font-display font-semibold text-cream-100 text-sm tracking-widest uppercase flex items-center gap-2">
                       <Calendar size={15} className="text-gold-400" /> Detalles de la reserva
                     </h2>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className={labelClass}>Fecha *</label>
                         <input name="date" type="date" value={form.date} onChange={handleChange} required
