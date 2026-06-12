@@ -125,7 +125,7 @@ export default async function HomePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {dailyMenu.map((dish, i) => (
                 <AnimateOnScroll key={dish.id} animation="fade-up" delay={i * 100}>
-                  <div className="card-hover flex items-start justify-between gap-4 p-5 rounded-xl border border-white/8 bg-white/4 backdrop-blur-sm hover:border-gold-400/30">
+                  <div className="card-hover flex items-start justify-between gap-4 p-5 rounded-xl border border-white/10 bg-black/50 backdrop-blur-sm hover:border-gold-400/30">
                     <div className="flex-1 min-w-0">
                       <span className="text-gold-400/70 text-[10px] tracking-[0.35em] uppercase font-medium">
                         {dish.category.name}
