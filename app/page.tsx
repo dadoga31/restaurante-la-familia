@@ -144,14 +144,15 @@ export default async function HomePage() {
                   )}
 
                   {/* Category label */}
-                  <AnimateOnScroll animation="fade-up" delay={gi * 80} className="mb-4">
-                    <p className="text-gold-400/60 text-[10px] tracking-[0.45em] uppercase font-medium">
+                  <AnimateOnScroll animation="fade-up" delay={gi * 80} className="mb-6 text-center">
+                    <p className="font-display text-base tracking-[0.35em] uppercase font-semibold text-gold-400">
                       {group.name}
                     </p>
+                    <div className="mt-2.5 h-px w-10 bg-gold-400/40 mx-auto" />
                   </AnimateOnScroll>
 
                   {/* Dishes in this category */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:[&>*:last-child:nth-child(odd)]:col-span-2 sm:[&>*:last-child:nth-child(odd)]:max-w-[calc(50%-0.5rem)] sm:[&>*:last-child:nth-child(odd)]:mx-auto">
                     {group.dishes.map((dish, i) => (
                       <AnimateOnScroll key={dish.id} animation="fade-up" delay={gi * 80 + i * 80}>
                         <div className="card-hover flex items-start justify-between gap-4 p-5 rounded-xl border border-white/10 bg-black/50 backdrop-blur-sm hover:border-gold-400/30">
