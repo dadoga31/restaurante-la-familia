@@ -1,6 +1,4 @@
 import Link from "next/link";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import AnimateOnScroll from "@/components/AnimateOnScroll";
 import ParallaxSection from "@/components/ParallaxSection";
 import AmbientGlow from "@/components/AmbientGlow";
@@ -29,14 +27,13 @@ async function getDailyMenu() {
   return Array.from(grouped.values());
 }
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const dailyMenu = await getDailyMenu();
 
   return (
     <>
-      <Navbar />
 
       {/* ══════════════════ HERO ══════════════════ */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -262,7 +259,6 @@ export default async function HomePage() {
         </div>
       </ParallaxSection>
 
-      <Footer />
     </>
   );
 }

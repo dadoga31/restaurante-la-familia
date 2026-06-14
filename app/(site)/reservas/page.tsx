@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import AnimateOnScroll from "@/components/AnimateOnScroll";
 import ParallaxSection from "@/components/ParallaxSection";
 import AmbientGlow from "@/components/AmbientGlow";
@@ -69,7 +67,6 @@ export default function ReservasPage() {
   if (status === "success") {
     return (
       <>
-        <Navbar />
         <main className="flex-1 flex items-center justify-center px-6 py-32 bg-carbon-950">
           <div className="text-center max-w-md">
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-full border border-success/40 bg-success/10 text-success mb-6" style={{ animation: "heroFadeUp 0.6s ease both" }}>
@@ -101,14 +98,12 @@ export default function ReservasPage() {
             </button>
           </div>
         </main>
-        <Footer />
       </>
     );
   }
 
   return (
     <>
-      <Navbar />
 
       {/* Header con foto */}
       <ParallaxSection
@@ -274,7 +269,6 @@ export default function ReservasPage() {
         </div>
       </main>
 
-      <Footer />
     </>
   );
 }

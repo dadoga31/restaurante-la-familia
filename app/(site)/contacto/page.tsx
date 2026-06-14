@@ -1,5 +1,3 @@
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import AnimateOnScroll from "@/components/AnimateOnScroll";
 import ParallaxSection from "@/components/ParallaxSection";
 import AmbientGlow from "@/components/AmbientGlow";
@@ -10,7 +8,6 @@ const HEADER_IMG = "https://images.unsplash.com/photo-1551218808-94e220e084d2?au
 export default function ContactoPage() {
   return (
     <>
-      <Navbar />
 
       {/* Header con foto */}
       <ParallaxSection
@@ -141,7 +138,6 @@ export default function ContactoPage() {
         </div>
       </main>
 
-      <Footer />
     </>
   );
 }

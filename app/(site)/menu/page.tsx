@@ -1,5 +1,3 @@
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import AnimateOnScroll from "@/components/AnimateOnScroll";
 import ParallaxSection from "@/components/ParallaxSection";
 import AmbientGlow from "@/components/AmbientGlow";
@@ -17,14 +15,13 @@ async function getMenu() {
   });
 }
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export default async function MenuPage() {
   const categories = await getMenu();
 
   return (
     <>
-      <Navbar />
 
       {/* Header con foto de fondo */}
       <ParallaxSection
@@ -130,7 +127,6 @@ export default async function MenuPage() {
         </div>
       </main>
 
-      <Footer />
     </>
   );
 }
