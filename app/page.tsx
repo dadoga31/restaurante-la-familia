@@ -29,7 +29,7 @@ async function getDailyMenu() {
   return Array.from(grouped.values());
 }
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export default async function HomePage() {
   const dailyMenu = await getDailyMenu();
