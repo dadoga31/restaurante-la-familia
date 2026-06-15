@@ -41,12 +41,12 @@ export default function Footer() {
             <ul className="space-y-3">
               <li className="flex items-start gap-3 text-cream-400 text-sm">
                 <MapPin size={16} className="mt-0.5 shrink-0 text-gold-400" />
-                <span>Calle Gran Vía 42, Planta 2<br />28013 Madrid</span>
+                <span>C/ Juan Francisco de Higueras Payo, 45<br />Yuncos, Toledo</span>
               </li>
               <li className="flex items-center gap-3 text-cream-400 text-sm">
                 <Phone size={16} className="shrink-0 text-gold-400" />
-                <a href="tel:+34912345678" className="hover:text-cream-100 transition-colors">
-                  +34 912 345 678
+                <a href="tel:+34626261689" className="hover:text-cream-100 transition-colors">
+                  626 261 689
                 </a>
               </li>
               <li className="flex items-center gap-3 text-cream-400 text-sm">
