@@ -31,6 +31,8 @@ export default function AdminMenusPage() {
   const [uploading, setUploading] = useState(false);
   const [catFilter, setCatFilter] = useState<number | "">("");
   const [error, setError] = useState("");
+  const [menuImage, setMenuImage] = useState("");
+  const [uploadingMenu, setUploadingMenu] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -45,7 +47,45 @@ export default function AdminMenusPage() {
     setLoading(false);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  const fetchSettings = useCallback(async () => {
+    const res = await fetch("/api/admin/settings");
+    const settings: { key: string; value: string }[] = await res.json();
+    const img = settings.find((s) => s.key === "daily_menu_image");
+    if (img?.value) setMenuImage(img.value);
+  }, []);
+
+  useEffect(() => { fetchData(); fetchSettings(); }, [fetchData, fetchSettings]);
+
+  const handleMenuImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingMenu(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      if (!res.ok) throw new Error((await res.json()).error);
+      const { url } = await res.json();
+      setMenuImage(url);
+      await fetch("/api/admin/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "daily_menu_image", value: url }),
+      });
+    } finally {
+      setUploadingMenu(false);
+      e.target.value = "";
+    }
+  };
+
+  const removeMenuImage = async () => {
+    setMenuImage("");
+    await fetch("/api/admin/settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: "daily_menu_image", value: "" }),
+    });
+  };
 
   const openCreate = () => {
     setEditing(null);
@@ -136,6 +176,60 @@ export default function AdminMenusPage() {
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
+
+      {/* Foto del Menú del Día */}
+      <div className="p-6 rounded-2xl border border-carbon-700 bg-carbon-800/30 space-y-4">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="font-display font-semibold text-cream-100 flex items-center gap-2">
+              <Upload size={16} className="text-gold-400" /> Foto del Menú del Día
+            </h2>
+            <p className="text-cream-400 text-xs mt-0.5">Se muestra en la página principal en lugar de las tarjetas de platos</p>
+          </div>
+          {menuImage && (
+            <button onClick={removeMenuImage}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-danger/40 text-danger text-xs hover:bg-danger/10 transition-all">
+              <ImageOff size={13} /> Quitar foto
+            </button>
+          )}
+        </div>
+        {menuImage ? (
+          <div className="relative rounded-xl overflow-hidden border border-carbon-600 group max-h-72">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={menuImage} alt="Foto menú del día" className="w-full object-cover max-h-72" />
+            <div className="absolute inset-0 bg-carbon-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <label className="flex items-center gap-2 px-4 py-2.5 bg-carbon-800 border border-gold-400/40 rounded-xl text-cream-200 text-sm font-medium cursor-pointer hover:border-gold-400 transition-all">
+                <Upload size={15} /> Cambiar foto
+                <input type="file" accept="image/*" className="hidden" onChange={handleMenuImageUpload} disabled={uploadingMenu} />
+              </label>
+            </div>
+            {uploadingMenu && (
+              <div className="absolute inset-0 bg-carbon-950/70 flex items-center justify-center">
+                <span className="w-7 h-7 border-2 border-gold-400 border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+          </div>
+        ) : (
+          <label className={`w-full flex flex-col items-center justify-center gap-2 py-10 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
+            uploadingMenu ? "border-gold-400/50 bg-gold-400/5" : "border-carbon-600 hover:border-gold-400/40 hover:bg-carbon-700/20"
+          }`}>
+            {uploadingMenu ? (
+              <>
+                <span className="w-7 h-7 border-2 border-gold-400 border-t-transparent rounded-full animate-spin" />
+                <span className="text-cream-400 text-sm">Subiendo...</span>
+              </>
+            ) : (
+              <>
+                <Upload size={28} className="text-cream-400/40" />
+                <span className="text-cream-200 text-sm font-medium">Subir foto del menú del día</span>
+                <span className="text-cream-400/50 text-xs">JPG, PNG, WEBP · Se mostrará en la web automáticamente</span>
+              </>
+            )}
+            <input type="file" accept="image/*" className="hidden" onChange={handleMenuImageUpload} disabled={uploadingMenu} />
+          </label>
+        )}
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>

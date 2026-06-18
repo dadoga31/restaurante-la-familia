@@ -16,8 +16,6 @@ async function getDailyMenu() {
     include: { category: true },
     orderBy: [{ category: { order: "asc" } }, { order: "asc" }],
   });
-
-  // Group by category preserving order
   const grouped = new Map<number, { name: string; dishes: typeof dishes }>();
   for (const dish of dishes) {
     const key = dish.categoryId;
@@ -27,10 +25,19 @@ async function getDailyMenu() {
   return Array.from(grouped.values());
 }
 
+async function getDailyMenuImage(): Promise<string | null> {
+  try {
+    const setting = await prisma.siteSetting.findUnique({ where: { key: "daily_menu_image" } });
+    return setting?.value || null;
+  } catch {
+    return null;
+  }
+}
+
 export const revalidate = 300;
 
 export default async function HomePage() {
-  const dailyMenu = await getDailyMenu();
+  const [dailyMenu, dailyMenuImage] = await Promise.all([getDailyMenu(), getDailyMenuImage()]);
 
   return (
     <>
@@ -128,49 +135,67 @@ export default async function HomePage() {
               <div className="mt-5 h-px w-14 bg-gold-400/50 mx-auto line-reveal" />
             </AnimateOnScroll>
 
-            <div className="space-y-8">
-              {dailyMenu.map((group, gi) => (
-                <div key={group.name}>
-                  {/* Divider between categories */}
-                  {gi > 0 && (
-                    <div className="flex items-center gap-4 mb-8">
-                      <div className="flex-1 h-px bg-white/10" />
-                      <div className="w-1 h-1 rounded-full bg-gold-400/40" />
-                      <div className="flex-1 h-px bg-white/10" />
-                    </div>
-                  )}
-
-                  {/* Category label */}
-                  <AnimateOnScroll animation="fade-up" delay={gi * 80} className="mb-6 text-center">
-                    <p className="font-display text-base tracking-[0.35em] uppercase font-semibold text-gold-400">
-                      {group.name}
-                    </p>
-                    <div className="mt-2.5 h-px w-10 bg-gold-400/40 mx-auto" />
-                  </AnimateOnScroll>
-
-                  {/* Dishes in this category */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:[&>*:last-child:nth-child(odd)]:col-span-2 sm:[&>*:last-child:nth-child(odd)]:max-w-[calc(50%-0.5rem)] sm:[&>*:last-child:nth-child(odd)]:mx-auto">
-                    {group.dishes.map((dish, i) => (
-                      <AnimateOnScroll key={dish.id} animation="fade-up" delay={gi * 80 + i * 80}>
-                        <div className="card-hover flex items-start justify-between gap-4 p-5 rounded-xl border border-white/10 bg-black/50 backdrop-blur-sm hover:border-gold-400/30">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-cream-100 font-semibold">{dish.name}</p>
-                            {dish.description && (
-                              <p className="text-cream-400 text-sm mt-1 leading-relaxed line-clamp-2">
-                                {dish.description}
-                              </p>
-                            )}
-                          </div>
-                          <span className="text-gold-400 font-bold text-sm shrink-0 font-display">
-                            {dish.price.toFixed(2)}€
-                          </span>
-                        </div>
-                      </AnimateOnScroll>
-                    ))}
+            {dailyMenuImage ? (
+              /* ── Foto del menú del día ── */
+              <AnimateOnScroll animation="fade-up" delay={100}>
+                <div className="relative max-w-2xl mx-auto">
+                  {/* Corner accents */}
+                  <div className="absolute -top-3 -left-3 w-8 h-8 border-l-2 border-t-2 border-gold-400/50 rounded-tl-sm pointer-events-none" />
+                  <div className="absolute -top-3 -right-3 w-8 h-8 border-r-2 border-t-2 border-gold-400/50 rounded-tr-sm pointer-events-none" />
+                  <div className="absolute -bottom-3 -left-3 w-8 h-8 border-l-2 border-b-2 border-gold-400/50 rounded-bl-sm pointer-events-none" />
+                  <div className="absolute -bottom-3 -right-3 w-8 h-8 border-r-2 border-b-2 border-gold-400/50 rounded-br-sm pointer-events-none" />
+                  {/* Photo */}
+                  <div className="rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={dailyMenuImage}
+                      alt="Menú del día"
+                      className="w-full h-auto object-cover"
+                    />
                   </div>
                 </div>
-              ))}
-            </div>
+              </AnimateOnScroll>
+            ) : (
+              /* ── Tarjetas de platos (fallback) ── */
+              <div className="space-y-8">
+                {dailyMenu.map((group, gi) => (
+                  <div key={group.name}>
+                    {gi > 0 && (
+                      <div className="flex items-center gap-4 mb-8">
+                        <div className="flex-1 h-px bg-white/10" />
+                        <div className="w-1 h-1 rounded-full bg-gold-400/40" />
+                        <div className="flex-1 h-px bg-white/10" />
+                      </div>
+                    )}
+                    <AnimateOnScroll animation="fade-up" delay={gi * 80} className="mb-6 text-center">
+                      <p className="font-display text-base tracking-[0.35em] uppercase font-semibold text-gold-400">
+                        {group.name}
+                      </p>
+                      <div className="mt-2.5 h-px w-10 bg-gold-400/40 mx-auto" />
+                    </AnimateOnScroll>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:[&>*:last-child:nth-child(odd)]:col-span-2 sm:[&>*:last-child:nth-child(odd)]:max-w-[calc(50%-0.5rem)] sm:[&>*:last-child:nth-child(odd)]:mx-auto">
+                      {group.dishes.map((dish, i) => (
+                        <AnimateOnScroll key={dish.id} animation="fade-up" delay={gi * 80 + i * 80}>
+                          <div className="card-hover flex items-start justify-between gap-4 p-5 rounded-xl border border-white/10 bg-black/50 backdrop-blur-sm hover:border-gold-400/30">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-cream-100 font-semibold">{dish.name}</p>
+                              {dish.description && (
+                                <p className="text-cream-400 text-sm mt-1 leading-relaxed line-clamp-2">
+                                  {dish.description}
+                                </p>
+                              )}
+                            </div>
+                            <span className="text-gold-400 font-bold text-sm shrink-0 font-display">
+                              {dish.price.toFixed(2)}€
+                            </span>
+                          </div>
+                        </AnimateOnScroll>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <AnimateOnScroll animation="fade-up" delay={400} className="text-center mt-10">
               <Link
