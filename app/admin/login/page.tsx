@@ -24,7 +24,6 @@ export default function AdminLoginPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       router.push("/admin");
-      router.refresh();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error de autenticación");
       setLoading(false);
