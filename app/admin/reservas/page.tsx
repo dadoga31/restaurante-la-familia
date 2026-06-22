@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import ReservasClient from "./ReservasClient";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 30;
 
 export default async function AdminReservasPage() {
   const reservations = await prisma.reservation.findMany({

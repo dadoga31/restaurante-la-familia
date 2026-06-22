@@ -34,5 +34,7 @@ export async function POST(req: NextRequest) {
 
   revalidatePath("/");
   revalidatePath("/menu");
+  revalidatePath("/admin/menus");
+  revalidatePath("/admin");
   return NextResponse.json(dish, { status: 201 });
 }

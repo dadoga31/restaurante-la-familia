@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import MenusClient from "./MenusClient";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 30;
 
 export default async function AdminMenusPage() {
   const [dishes, categories] = await Promise.all([

@@ -27,6 +27,8 @@ export async function PUT(
 
   revalidatePath("/");
   revalidatePath("/menu");
+  revalidatePath("/admin/menus");
+  revalidatePath("/admin");
   return NextResponse.json(dish);
 }
 
@@ -38,5 +40,7 @@ export async function DELETE(
   await prisma.dish.delete({ where: { id: parseInt(id) } });
   revalidatePath("/");
   revalidatePath("/menu");
+  revalidatePath("/admin/menus");
+  revalidatePath("/admin");
   return NextResponse.json({ ok: true });
 }

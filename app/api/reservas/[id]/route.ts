@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getAdminSession } from "@/lib/auth";
 
@@ -23,6 +24,8 @@ export async function PATCH(
     data: { status },
   });
 
+  revalidatePath("/admin/reservas");
+  revalidatePath("/admin");
   return NextResponse.json(reservation);
 }
 
@@ -35,5 +38,7 @@ export async function DELETE(
 
   const { id } = await params;
   await prisma.reservation.delete({ where: { id: parseInt(id) } });
+  revalidatePath("/admin/reservas");
+  revalidatePath("/admin");
   return NextResponse.json({ ok: true });
 }

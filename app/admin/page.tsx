@@ -13,7 +13,7 @@ const STATUS_CLASS: Record<string, string> = {
   CANCELLED: "badge-cancelled", COMPLETED: "badge-completed",
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 30;
 
 export default async function AdminDashboard() {
   const todayStr = format(new Date(), "yyyy-MM-dd");

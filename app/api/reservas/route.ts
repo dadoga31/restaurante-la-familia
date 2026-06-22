@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getAdminSession } from "@/lib/auth";
 import { randomBytes } from "crypto";
@@ -62,5 +63,7 @@ export async function POST(req: NextRequest) {
     data: { name, email, phone, date, time, guests, specialRequest, confirmCode, status: "PENDING" },
   });
 
+  revalidatePath("/admin/reservas");
+  revalidatePath("/admin");
   return NextResponse.json({ ok: true, confirmCode: reservation.confirmCode }, { status: 201 });
 }
