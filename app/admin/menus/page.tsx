@@ -48,10 +48,13 @@ export default function AdminMenusPage() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchSettings = useCallback(async () => {
-    const res = await fetch("/api/admin/settings");
-    const settings: { key: string; value: string }[] = await res.json();
-    const img = settings.find((s) => s.key === "daily_menu_image");
-    if (img?.value) setMenuImage(img.value);
+    try {
+      const res = await fetch("/api/admin/settings");
+      if (!res.ok) return;
+      const settings: { key: string; value: string }[] = await res.json();
+      const img = settings.find((s) => s.key === "daily_menu_image");
+      if (img?.value) setMenuImage(img.value);
+    } catch { /* tabla no creada aún */ }
   }, []);
 
   useEffect(() => { fetchData(); fetchSettings(); }, [fetchData, fetchSettings]);
