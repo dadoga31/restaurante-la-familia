@@ -5,13 +5,14 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   LayoutDashboard, UtensilsCrossed, CalendarDays,
-  LogOut, Menu, X, ExternalLink,
+  LogOut, Menu, X, ExternalLink, Settings,
 } from "lucide-react";
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/admin/menus", label: "Gestión Carta", icon: UtensilsCrossed, exact: false },
   { href: "/admin/reservas", label: "Reservas", icon: CalendarDays, exact: false },
+  { href: "/admin/configuracion", label: "Configuración", icon: Settings, exact: false },
 ];
 
 export default function AdminSidebar() {

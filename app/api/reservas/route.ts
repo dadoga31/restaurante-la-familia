@@ -52,6 +52,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Este horario no está disponible" }, { status: 409 });
   }
 
+  // Capacity check
+  let maxGuests = 30;
+  try {
+    const setting = await prisma.siteSetting.findUnique({ where: { key: "max_guests_per_slot" } });
+    if (setting?.value) maxGuests = parseInt(setting.value);
+  } catch { /* SiteSetting table may not exist */ }
+
+  const bookedGuests = await prisma.reservation.aggregate({
+    where: { date, time, status: { in: ["PENDING", "CONFIRMED"] } },
+    _sum: { guests: true },
+  });
+  const totalBooked = (bookedGuests._sum.guests ?? 0) + guests;
+  if (totalBooked > maxGuests) {
+    return NextResponse.json(
+      { error: `No hay plaza para ${guests} personas en este horario. Llama al 626 261 689 para consultar disponibilidad.` },
+      { status: 409 }
+    );
+  }
+
   let confirmCode = generateCode();
   let tries = 0;
   while (await prisma.reservation.findUnique({ where: { confirmCode } })) {

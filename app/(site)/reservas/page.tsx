@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AnimateOnScroll from "@/components/AnimateOnScroll";
 import ParallaxSection from "@/components/ParallaxSection";
 import AmbientGlow from "@/components/AmbientGlow";
-import { Calendar, Clock, Users, MessageSquare, CheckCircle, AlertCircle } from "lucide-react";
+import { Calendar, Clock, Users, MessageSquare, CheckCircle, AlertCircle, Phone } from "lucide-react";
 
 const HEADER_IMG = "https://images.unsplash.com/photo-1424847651672-bf20a4b0982b?auto=format&fit=crop&w=1920&q=80";
 
@@ -13,6 +13,8 @@ const TIME_SLOTS = {
   dinner: ["20:00","20:30","21:00","21:30","22:00","22:30"],
 };
 
+type SlotData = { available: boolean; remaining: number };
+type Availability = { date: string; slots: Record<string, SlotData>; closed: boolean };
 type Status = "idle" | "loading" | "success" | "error";
 
 function getTodayDate() {
@@ -34,10 +36,31 @@ export default function ReservasPage() {
   const [status, setStatus] = useState<Status>("idle");
   const [confirmCode, setConfirmCode] = useState("");
   const [error, setError] = useState("");
+  const [availability, setAvailability] = useState<Availability | null>(null);
+  const [loadingAvail, setLoadingAvail] = useState(false);
+
+  // Fetch availability when date changes
+  useEffect(() => {
+    if (!form.date || isMonday(form.date)) { setAvailability(null); return; }
+    setLoadingAvail(true);
+    setAvailability(null);
+    fetch(`/api/reservas/availability?date=${form.date}`)
+      .then((r) => r.json())
+      .then((data) => { setAvailability(data); setLoadingAvail(false); })
+      .catch(() => setLoadingAvail(false));
+  }, [form.date]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     if (name === "date") { setForm((p) => ({ ...p, date: value, time: "" })); return; }
+    // If guests change and current time becomes unavailable, clear it
+    if (name === "guests" && form.time && availability) {
+      const slot = availability.slots[form.time];
+      if (!slot?.available || slot.remaining < parseInt(value)) {
+        setForm((p) => ({ ...p, guests: value, time: "" }));
+        return;
+      }
+    }
     setForm((p) => ({ ...p, [name]: value }));
   };
 
@@ -61,51 +84,61 @@ export default function ReservasPage() {
     }
   };
 
+  // Per-slot availability considering selected guests
+  const guests = parseInt(form.guests);
+  const getSlotState = (slot: string): "available" | "full" | "loading" => {
+    if (loadingAvail) return "loading";
+    if (!availability) return "available";
+    const s = availability.slots[slot];
+    if (!s) return "available";
+    if (!s.available || s.remaining < guests) return "full";
+    return "available";
+  };
+
+  const allFull = !loadingAvail && availability && !availability.closed &&
+    Object.values(availability.slots).every((s) => !s.available || s.remaining < guests);
+
   const inputClass = "w-full bg-carbon-800 border border-carbon-600 focus:border-gold-400 text-cream-100 rounded-xl px-4 py-3 text-sm outline-none transition-all duration-300 placeholder:text-cream-400/30 focus:bg-carbon-750";
   const labelClass = "block text-xs font-medium tracking-wider uppercase text-cream-300 mb-2";
 
   if (status === "success") {
     return (
-      <>
-        <main className="flex-1 flex items-center justify-center px-6 py-32 bg-carbon-950">
-          <div className="text-center max-w-md">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full border border-success/40 bg-success/10 text-success mb-6" style={{ animation: "heroFadeUp 0.6s ease both" }}>
-              <CheckCircle size={36} />
-            </div>
-            <h1 className="font-display font-bold text-3xl text-cream-50 mb-4">¡Reserva Confirmada!</h1>
-            <p className="text-cream-400 leading-relaxed mb-6">
-              Hemos recibido tu reserva para{" "}
-              <strong className="text-cream-100">{form.guests} personas</strong> el{" "}
-              <strong className="text-cream-100">
-                {new Date(form.date + "T12:00:00").toLocaleDateString("es-ES", {
-                  weekday: "long", day: "numeric", month: "long", year: "numeric",
-                })}
-              </strong>{" "}
-              a las <strong className="text-cream-100">{form.time}</strong>.
-            </p>
-            <div className="p-5 rounded-xl border border-gold-400/30 bg-gold-400/5 mb-8">
-              <p className="text-xs text-cream-400 uppercase tracking-widest mb-2">Código de reserva</p>
-              <p className="text-3xl font-bold font-display text-gold-400 tracking-[0.3em]">{confirmCode}</p>
-            </div>
-            <p className="text-cream-400 text-sm mb-8">
-              Guarda este código — lo necesitarás al llegar. Para cancelar, llámanos con al menos 24h de antelación.
-            </p>
-            <button
-              onClick={() => { setStatus("idle"); setForm({ name:"",email:"",phone:"",date:"",time:"",guests:"2",specialRequest:"" }); }}
-              className="px-6 py-3 border border-gold-400/40 text-gold-400 hover:bg-gold-400/10 text-sm tracking-wider uppercase rounded-xl transition-all"
-            >
-              Nueva reserva
-            </button>
+      <main className="flex-1 flex items-center justify-center px-6 py-32 bg-carbon-950">
+        <div className="text-center max-w-md">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full border border-success/40 bg-success/10 text-success mb-6" style={{ animation: "heroFadeUp 0.6s ease both" }}>
+            <CheckCircle size={36} />
           </div>
-        </main>
-      </>
+          <h1 className="font-display font-bold text-3xl text-cream-50 mb-4">¡Reserva Recibida!</h1>
+          <p className="text-cream-400 leading-relaxed mb-6">
+            Hemos recibido tu reserva para{" "}
+            <strong className="text-cream-100">{form.guests} personas</strong> el{" "}
+            <strong className="text-cream-100">
+              {new Date(form.date + "T12:00:00").toLocaleDateString("es-ES", {
+                weekday: "long", day: "numeric", month: "long", year: "numeric",
+              })}
+            </strong>{" "}
+            a las <strong className="text-cream-100">{form.time}</strong>.
+          </p>
+          <div className="p-5 rounded-xl border border-gold-400/30 bg-gold-400/5 mb-8">
+            <p className="text-xs text-cream-400 uppercase tracking-widest mb-2">Código de reserva</p>
+            <p className="text-3xl font-bold font-display text-gold-400 tracking-[0.3em]">{confirmCode}</p>
+          </div>
+          <p className="text-cream-400 text-sm mb-8">
+            Guarda este código — lo necesitarás al llegar. Para cancelar, llámanos con al menos 24h de antelación.
+          </p>
+          <button
+            onClick={() => { setStatus("idle"); setForm({ name:"",email:"",phone:"",date:"",time:"",guests:"2",specialRequest:"" }); setAvailability(null); }}
+            className="px-6 py-3 border border-gold-400/40 text-gold-400 hover:bg-gold-400/10 text-sm tracking-wider uppercase rounded-xl transition-all"
+          >
+            Nueva reserva
+          </button>
+        </div>
+      </main>
     );
   }
 
   return (
     <>
-
-      {/* Header con foto */}
       <ParallaxSection
         imageUrl={HEADER_IMG}
         overlayOpacity={0.82}
@@ -131,10 +164,8 @@ export default function ReservasPage() {
           <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
-              {/* ── LEFT COLUMN ── */}
+              {/* LEFT */}
               <div className="space-y-5">
-
-                {/* Personal data */}
                 <AnimateOnScroll animation="fade-right" delay={100}>
                   <div className="p-7 rounded-2xl border border-carbon-700 bg-carbon-900/80 backdrop-blur-sm space-y-5 shadow-2xl">
                     <h2 className="font-display font-semibold text-cream-100 text-sm tracking-widest uppercase flex items-center gap-2">
@@ -160,7 +191,6 @@ export default function ReservasPage() {
                   </div>
                 </AnimateOnScroll>
 
-                {/* Special requests */}
                 <AnimateOnScroll animation="fade-right" delay={220}>
                   <div className="p-7 rounded-2xl border border-carbon-700 bg-carbon-900/80 backdrop-blur-sm shadow-2xl">
                     <h2 className="font-display font-semibold text-cream-100 text-sm tracking-widest uppercase flex items-center gap-2 mb-4">
@@ -176,10 +206,8 @@ export default function ReservasPage() {
                 </AnimateOnScroll>
               </div>
 
-              {/* ── RIGHT COLUMN ── */}
+              {/* RIGHT */}
               <div className="space-y-5">
-
-                {/* Reservation details */}
                 <AnimateOnScroll animation="fade-left" delay={100}>
                   <div className="p-7 rounded-2xl border border-carbon-700 bg-carbon-900/80 backdrop-blur-sm space-y-6 shadow-2xl">
                     <h2 className="font-display font-semibold text-cream-100 text-sm tracking-widest uppercase flex items-center gap-2">
@@ -205,58 +233,85 @@ export default function ReservasPage() {
                       </div>
                     </div>
 
+                    {/* "Todo completo" banner */}
+                    {allFull && (
+                      <div className="flex flex-col items-center gap-3 p-5 rounded-xl border border-danger/30 bg-danger/5 text-center">
+                        <p className="text-cream-100 font-semibold text-sm">Sin disponibilidad para este día</p>
+                        <p className="text-cream-400 text-xs leading-relaxed">
+                          No quedan plazas para {guests} {guests === 1 ? "persona" : "personas"}.<br />
+                          Para consultar disponibilidad llámanos:
+                        </p>
+                        <a href="tel:+34626261689"
+                          className="inline-flex items-center gap-2 px-5 py-2.5 bg-gold-400/10 border border-gold-400/40 text-gold-400 rounded-xl text-sm font-semibold hover:bg-gold-400/20 transition-all">
+                          <Phone size={15} /> 626 261 689
+                        </a>
+                      </div>
+                    )}
+
                     {/* Time slots */}
-                    <div>
-                      <label className={`${labelClass} flex items-center gap-2`}>
-                        <Clock size={13} className="text-gold-400" /> Hora *
-                      </label>
-                      <div className="space-y-3">
-                        <p className="text-cream-400/50 text-[10px] uppercase tracking-[0.3em]">Comida</p>
-                        <div className="grid grid-cols-3 gap-2">
-                          {TIME_SLOTS.lunch.map((slot) => (
-                            <button key={slot} type="button"
-                              onClick={() => setForm((p) => ({ ...p, time: slot }))}
-                              className={`py-2.5 text-sm rounded-lg border font-medium transition-all duration-200 ${
-                                form.time === slot
-                                  ? "bg-gold-400 border-gold-400 text-carbon-900 font-bold shadow-lg shadow-gold-400/20"
-                                  : "border-carbon-600 text-cream-300 hover:border-gold-400/40 hover:text-cream-50 hover:bg-carbon-700"
-                              }`}>{slot}</button>
-                          ))}
-                        </div>
-                        <p className="text-cream-400/50 text-[10px] uppercase tracking-[0.3em] pt-1">Cena</p>
-                        <div className="grid grid-cols-3 gap-2">
-                          {TIME_SLOTS.dinner.map((slot) => (
-                            <button key={slot} type="button"
-                              onClick={() => setForm((p) => ({ ...p, time: slot }))}
-                              className={`py-2.5 text-sm rounded-lg border font-medium transition-all duration-200 ${
-                                form.time === slot
-                                  ? "bg-gold-400 border-gold-400 text-carbon-900 font-bold shadow-lg shadow-gold-400/20"
-                                  : "border-carbon-600 text-cream-300 hover:border-gold-400/40 hover:text-cream-50 hover:bg-carbon-700"
-                              }`}>{slot}</button>
+                    {!allFull && (
+                      <div>
+                        <label className={`${labelClass} flex items-center gap-2`}>
+                          <Clock size={13} className="text-gold-400" /> Hora *
+                        </label>
+                        <div className="space-y-3">
+                          {(["lunch", "dinner"] as const).map((service) => (
+                            <div key={service}>
+                              <p className="text-cream-400/50 text-[10px] uppercase tracking-[0.3em] mb-2">
+                                {service === "lunch" ? "Comida" : "Cena"}
+                              </p>
+                              <div className="grid grid-cols-3 gap-2">
+                                {TIME_SLOTS[service].map((slot) => {
+                                  const state = getSlotState(slot);
+                                  const selected = form.time === slot;
+                                  return (
+                                    <button key={slot} type="button"
+                                      disabled={state === "full"}
+                                      onClick={() => state !== "full" && setForm((p) => ({ ...p, time: slot }))}
+                                      className={`py-2.5 rounded-lg border font-medium transition-all duration-200 flex flex-col items-center justify-center leading-tight
+                                        ${selected
+                                          ? "bg-gold-400 border-gold-400 text-carbon-900 font-bold shadow-lg shadow-gold-400/20"
+                                          : state === "full"
+                                          ? "border-carbon-700 text-cream-400/25 bg-carbon-800/20 cursor-not-allowed"
+                                          : state === "loading"
+                                          ? "border-carbon-700 text-cream-400/40 animate-pulse"
+                                          : "border-carbon-600 text-cream-300 hover:border-gold-400/40 hover:text-cream-50 hover:bg-carbon-700"
+                                        }`}
+                                    >
+                                      <span className="text-sm">{slot}</span>
+                                      {state === "full" && (
+                                        <span className="text-[9px] text-cream-400/30 mt-0.5">Completo</span>
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
                           ))}
                         </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </AnimateOnScroll>
 
-                {/* Error + Submit */}
                 <AnimateOnScroll animation="fade-left" delay={220}>
                   <div className="space-y-4">
                     {status === "error" && error && (
-                      <div className="flex items-center gap-3 p-4 rounded-xl border border-danger/40 bg-danger/10 text-danger text-sm">
-                        <AlertCircle size={18} className="shrink-0" /> {error}
+                      <div className="flex items-start gap-3 p-4 rounded-xl border border-danger/40 bg-danger/10 text-danger text-sm">
+                        <AlertCircle size={18} className="shrink-0 mt-0.5" /> {error}
                       </div>
                     )}
-                    <button type="submit"
-                      disabled={status === "loading" || !form.time || isMonday(form.date)}
-                      className="w-full py-4 bg-gold-400 hover:bg-gold-300 disabled:bg-carbon-700 disabled:text-cream-400 text-carbon-900 font-bold text-sm tracking-[0.2em] uppercase rounded-xl transition-all duration-300 hover:shadow-xl hover:shadow-gold-400/20 hover:-translate-y-0.5 flex items-center justify-center gap-3">
-                      {status === "loading" ? (
-                        <><span className="w-4 h-4 rounded-full border-2 border-carbon-900 border-t-transparent animate-spin" /> Enviando...</>
-                      ) : (
-                        <><Calendar size={17} /> Confirmar Reserva</>
-                      )}
-                    </button>
+                    {!allFull && (
+                      <button type="submit"
+                        disabled={status === "loading" || !form.time || isMonday(form.date)}
+                        className="w-full py-4 bg-gold-400 hover:bg-gold-300 disabled:bg-carbon-700 disabled:text-cream-400 text-carbon-900 font-bold text-sm tracking-[0.2em] uppercase rounded-xl transition-all duration-300 hover:shadow-xl hover:shadow-gold-400/20 hover:-translate-y-0.5 flex items-center justify-center gap-3">
+                        {status === "loading" ? (
+                          <><span className="w-4 h-4 rounded-full border-2 border-carbon-900 border-t-transparent animate-spin" /> Enviando...</>
+                        ) : (
+                          <><Calendar size={17} /> Confirmar Reserva</>
+                        )}
+                      </button>
+                    )}
                     <p className="text-center text-cream-400/40 text-xs">
                       Al reservar aceptas nuestra política de cancelaciones. Cancela con mínimo 24h de antelación.
                     </p>
@@ -268,7 +323,6 @@ export default function ReservasPage() {
           </form>
         </div>
       </main>
-
     </>
   );
 }
