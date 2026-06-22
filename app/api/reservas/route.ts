@@ -8,11 +8,6 @@ function generateCode(): string {
   return randomBytes(3).toString("hex").toUpperCase();
 }
 
-function isMonday(dateStr: string): boolean {
-  const d = new Date(dateStr + "T12:00:00");
-  return d.getDay() === 1;
-}
-
 export async function GET(req: NextRequest) {
   const session = await getAdminSession();
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
@@ -41,23 +36,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 });
   }
 
-  if (isMonday(date)) {
-    return NextResponse.json({ error: "El restaurante cierra los lunes" }, { status: 400 });
+  // Fetch settings + blocked slot in parallel
+  const [settings, blocked] = await Promise.all([
+    prisma.siteSetting.findMany({
+      where: { key: { in: ["closed_weekdays", "max_guests_per_slot"] } },
+    }).catch(() => []),
+    prisma.blockedSlot.findFirst({ where: { date, OR: [{ time: null }, { time }] } }),
+  ]);
+
+  const closedVal = settings.find((s) => s.key === "closed_weekdays")?.value;
+  const closedWeekdays = closedVal
+    ? closedVal.split(",").map((n) => parseInt(n.trim())).filter((n) => !isNaN(n) && n >= 0 && n <= 6)
+    : [1]; // default: Monday
+  const maxVal = settings.find((s) => s.key === "max_guests_per_slot")?.value;
+  const maxGuests = maxVal ? parseInt(maxVal) : 30;
+
+  const dayOfWeek = new Date(date + "T12:00:00").getDay();
+  if (closedWeekdays.includes(dayOfWeek)) {
+    return NextResponse.json({ error: "El restaurante no abre ese día" }, { status: 400 });
   }
 
-  const blocked = await prisma.blockedSlot.findFirst({
-    where: { date, OR: [{ time: null }, { time }] },
-  });
   if (blocked) {
     return NextResponse.json({ error: "Este horario no está disponible" }, { status: 409 });
   }
-
-  // Capacity check
-  let maxGuests = 30;
-  try {
-    const setting = await prisma.siteSetting.findUnique({ where: { key: "max_guests_per_slot" } });
-    if (setting?.value) maxGuests = parseInt(setting.value);
-  } catch { /* SiteSetting table may not exist */ }
 
   const bookedGuests = await prisma.reservation.aggregate({
     where: { date, time, status: { in: ["PENDING", "CONFIRMED"] } },

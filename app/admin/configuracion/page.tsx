@@ -10,11 +10,13 @@ export default async function ConfiguracionPage() {
   ]);
 
   const maxGuests = settings.find((s) => s.key === "max_guests_per_slot")?.value ?? "30";
+  const closedWeekdays = settings.find((s) => s.key === "closed_weekdays")?.value ?? "1";
 
   return (
     <ConfigClient
       initialBlockedSlots={blockedSlots.map((s) => ({ id: s.id, date: s.date, time: s.time }))}
       initialMaxGuests={maxGuests}
+      initialClosedWeekdays={closedWeekdays}
     />
   );
 }

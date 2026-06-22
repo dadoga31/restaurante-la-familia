@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Settings, Users, CalendarX, Plus, Trash2, Info, Clock } from "lucide-react";
+import { Settings, Users, CalendarX, Plus, Trash2, Info, Clock, CalendarOff } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -10,22 +10,43 @@ const TIME_SLOTS = [
   "20:00","20:30","21:00","21:30","22:00","22:30",
 ];
 
+const WEEKDAYS = [
+  { label: "Lun", value: 1 },
+  { label: "Mar", value: 2 },
+  { label: "Mié", value: 3 },
+  { label: "Jue", value: 4 },
+  { label: "Vie", value: 5 },
+  { label: "Sáb", value: 6 },
+  { label: "Dom", value: 0 },
+];
+
 type BlockedSlot = { id: number; date: string; time: string | null };
-type Props = { initialMaxGuests: string; initialBlockedSlots: BlockedSlot[] };
+type Props = { initialMaxGuests: string; initialBlockedSlots: BlockedSlot[]; initialClosedWeekdays: string };
 
 function formatDate(d: string) {
   try { return format(new Date(d + "T12:00:00"), "EEE d MMM yyyy", { locale: es }); }
   catch { return d; }
 }
 
-export default function ConfigClient({ initialMaxGuests, initialBlockedSlots }: Props) {
+function parseWeekdays(val: string): number[] {
+  return val.split(",").map((n) => parseInt(n.trim())).filter((n) => !isNaN(n) && n >= 0 && n <= 6);
+}
+
+export default function ConfigClient({ initialMaxGuests, initialBlockedSlots, initialClosedWeekdays }: Props) {
+  // Aforo máximo
   const [maxGuests, setMaxGuests] = useState(initialMaxGuests);
   const [savingMax, setSavingMax] = useState(false);
   const [savedMax, setSavedMax] = useState(false);
 
+  // Días de cierre semanal
+  const [closedDays, setClosedDays] = useState<number[]>(parseWeekdays(initialClosedWeekdays || "1"));
+  const [savingDays, setSavingDays] = useState(false);
+  const [savedDays, setSavedDays] = useState(false);
+
+  // Bloqueos puntuales
   const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>(initialBlockedSlots);
   const [newDate, setNewDate] = useState("");
-  const [newTime, setNewTime] = useState(""); // empty = whole day
+  const [newTime, setNewTime] = useState("");
   const [addingBlock, setAddingBlock] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
@@ -39,6 +60,23 @@ export default function ConfigClient({ initialMaxGuests, initialBlockedSlots }: 
     setSavingMax(false);
     setSavedMax(true);
     setTimeout(() => setSavedMax(false), 2000);
+  };
+
+  const toggleDay = (day: number) => {
+    setClosedDays((prev) => prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]);
+    setSavedDays(false);
+  };
+
+  const saveClosedDays = async () => {
+    setSavingDays(true);
+    await fetch("/api/admin/settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: "closed_weekdays", value: closedDays.join(",") }),
+    });
+    setSavingDays(false);
+    setSavedDays(true);
+    setTimeout(() => setSavedDays(false), 2000);
   };
 
   const addBlock = async () => {
@@ -66,6 +104,10 @@ export default function ConfigClient({ initialMaxGuests, initialBlockedSlots }: 
   };
 
   const inputClass = "bg-carbon-700 border border-carbon-600 focus:border-gold-400 text-cream-100 rounded-lg px-3 py-2.5 text-sm outline-none transition-all";
+  const btnSave = (saved: boolean, saving: boolean) =>
+    `px-5 py-2.5 rounded-lg text-sm font-bold tracking-wider uppercase transition-all disabled:opacity-50 ${
+      saved ? "bg-success/15 border border-success/30 text-success" : "bg-gold-400 hover:bg-gold-300 text-carbon-900"
+    }`;
 
   return (
     <div className="p-6 lg:p-8 space-y-8">
@@ -101,7 +143,7 @@ export default function ConfigClient({ initialMaxGuests, initialBlockedSlots }: 
             </div>
             <div>
               <p className="font-semibold text-cream-100 mb-1">4. Bloquea días festivos o eventos</p>
-              <p className="text-cream-400 text-xs">Usa la sección de abajo para bloquear días completos (vacaciones, festivos) o franjas horarias concretas (evento privado en comida, etc.). Los lunes están cerrados automáticamente.</p>
+              <p className="text-cream-400 text-xs">Configura los días de cierre habitual más abajo y usa los bloqueos puntuales para festivos, vacaciones o eventos concretos.</p>
             </div>
           </div>
         </div>
@@ -109,6 +151,41 @@ export default function ConfigClient({ initialMaxGuests, initialBlockedSlots }: 
           <p className="text-xs text-gold-400/70">
             ⚠️ <strong>Importante:</strong> procesa las reservas pendientes con regularidad. Una reserva cancelada tarde libera la plaza, pero si hay muchas pendientes sin gestionar el aforo puede parecer lleno cuando no lo está.
           </p>
+        </div>
+      </div>
+
+      {/* ── DÍAS DE CIERRE SEMANAL ── */}
+      <div className="p-6 rounded-2xl border border-carbon-700 bg-carbon-800/30 space-y-4">
+        <h2 className="font-display font-semibold text-cream-100 flex items-center gap-2">
+          <CalendarOff size={18} className="text-gold-400" /> Días de cierre semanal
+        </h2>
+        <p className="text-cream-400 text-sm">
+          Marca los días en que el restaurante cierra habitualmente. Los clientes no podrán hacer reservas en esos días.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {WEEKDAYS.map(({ label, value }) => {
+            const closed = closedDays.includes(value);
+            return (
+              <button key={value} type="button" onClick={() => toggleDay(value)}
+                className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition-all border ${
+                  closed
+                    ? "bg-danger/15 border-danger/40 text-danger"
+                    : "bg-carbon-700/50 border-carbon-600 text-cream-300 hover:border-gold-400/40 hover:text-cream-100"
+                }`}>
+                {label}{closed && <span className="ml-1.5 text-xs">✕</span>}
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex items-center justify-between pt-1">
+          <p className="text-cream-400/50 text-xs">
+            {closedDays.length === 0
+              ? "Ningún día de cierre configurado"
+              : `${closedDays.length} día${closedDays.length > 1 ? "s" : ""} marcado${closedDays.length > 1 ? "s" : ""} como cerrado`}
+          </p>
+          <button onClick={saveClosedDays} disabled={savingDays} className={btnSave(savedDays, savingDays)}>
+            {savingDays ? "Guardando..." : savedDays ? "✓ Guardado" : "Guardar"}
+          </button>
         </div>
       </div>
 
@@ -127,12 +204,7 @@ export default function ConfigClient({ initialMaxGuests, initialBlockedSlots }: 
             className={`${inputClass} w-24 text-center font-bold text-lg`}
           />
           <span className="text-cream-400 text-sm">personas por franja</span>
-          <button onClick={saveMaxGuests} disabled={savingMax}
-            className={`ml-auto px-5 py-2.5 rounded-lg text-sm font-bold tracking-wider uppercase transition-all ${
-              savedMax
-                ? "bg-success/15 border border-success/30 text-success"
-                : "bg-gold-400 hover:bg-gold-300 text-carbon-900"
-            } disabled:opacity-50`}>
+          <button onClick={saveMaxGuests} disabled={savingMax} className={`ml-auto ${btnSave(savedMax, savingMax)}`}>
             {savingMax ? "Guardando..." : savedMax ? "✓ Guardado" : "Guardar"}
           </button>
         </div>
@@ -144,10 +216,10 @@ export default function ConfigClient({ initialMaxGuests, initialBlockedSlots }: 
       {/* ── BLOQUEAR DÍAS / HORAS ── */}
       <div className="p-6 rounded-2xl border border-carbon-700 bg-carbon-800/30 space-y-5">
         <h2 className="font-display font-semibold text-cream-100 flex items-center gap-2">
-          <CalendarX size={18} className="text-gold-400" /> Bloquear días u horas
+          <CalendarX size={18} className="text-gold-400" /> Bloquear días u horas concretas
         </h2>
         <p className="text-cream-400 text-sm">
-          Bloquea un día completo (festivos, vacaciones) o una hora concreta (evento privado, servicio cerrado). Los clientes no podrán reservar en las fechas bloqueadas.
+          Para festivos, vacaciones o un evento puntual. Bloquea un día completo o solo una franja horaria.
         </p>
 
         {/* Add block form */}

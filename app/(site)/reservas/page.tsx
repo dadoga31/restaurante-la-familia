@@ -23,11 +23,6 @@ function getTodayDate() {
   return d.toISOString().split("T")[0];
 }
 
-function isMonday(dateStr: string) {
-  if (!dateStr) return false;
-  return new Date(dateStr + "T12:00:00").getDay() === 1;
-}
-
 export default function ReservasPage() {
   const [form, setForm] = useState({
     name: "", email: "", phone: "",
@@ -41,7 +36,7 @@ export default function ReservasPage() {
 
   // Fetch availability when date changes
   useEffect(() => {
-    if (!form.date || isMonday(form.date)) { setAvailability(null); return; }
+    if (!form.date) { setAvailability(null); return; }
     setLoadingAvail(true);
     setAvailability(null);
     fetch(`/api/reservas/availability?date=${form.date}`)
@@ -66,7 +61,6 @@ export default function ReservasPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isMonday(form.date)) { setError("El lunes el restaurante permanece cerrado."); return; }
     setStatus("loading"); setError("");
     try {
       const res = await fetch("/api/reservas", {
@@ -95,7 +89,8 @@ export default function ReservasPage() {
     return "available";
   };
 
-  const allFull = !loadingAvail && availability && !availability.closed &&
+  const isDayClosed = !loadingAvail && availability?.closed === true;
+  const allFull = !loadingAvail && !!availability && !availability.closed &&
     Object.values(availability.slots).every((s) => !s.available || s.remaining < guests);
 
   const inputClass = "w-full bg-carbon-800 border border-carbon-600 focus:border-gold-400 text-cream-100 rounded-xl px-4 py-3 text-sm outline-none transition-all duration-300 placeholder:text-cream-400/30 focus:bg-carbon-750";
@@ -218,9 +213,9 @@ export default function ReservasPage() {
                         <label className={labelClass}>Fecha *</label>
                         <input name="date" type="date" value={form.date} onChange={handleChange} required
                           min={getTodayDate()}
-                          className={`${inputClass} ${isMonday(form.date) ? "border-danger/60" : ""}`} />
-                        {isMonday(form.date) && (
-                          <p className="text-danger text-xs mt-1.5">Cerramos los lunes.</p>
+                          className={`${inputClass} ${isDayClosed ? "border-danger/60" : ""}`} />
+                        {isDayClosed && (
+                          <p className="text-danger text-xs mt-1.5">El restaurante no abre este día.</p>
                         )}
                       </div>
                       <div>
@@ -233,8 +228,16 @@ export default function ReservasPage() {
                       </div>
                     </div>
 
+                    {/* "Cerrado" banner */}
+                    {isDayClosed && (
+                      <div className="flex flex-col items-center gap-2 p-5 rounded-xl border border-carbon-600 bg-carbon-800/60 text-center">
+                        <p className="text-cream-100 font-semibold text-sm">El restaurante no abre este día</p>
+                        <p className="text-cream-400 text-xs">Elige otra fecha para tu reserva</p>
+                      </div>
+                    )}
+
                     {/* "Todo completo" banner */}
-                    {allFull && (
+                    {!isDayClosed && allFull && (
                       <div className="flex flex-col items-center gap-3 p-5 rounded-xl border border-danger/30 bg-danger/5 text-center">
                         <p className="text-cream-100 font-semibold text-sm">Sin disponibilidad para este día</p>
                         <p className="text-cream-400 text-xs leading-relaxed">
@@ -249,7 +252,7 @@ export default function ReservasPage() {
                     )}
 
                     {/* Time slots */}
-                    {!allFull && (
+                    {!isDayClosed && !allFull && (
                       <div>
                         <label className={`${labelClass} flex items-center gap-2`}>
                           <Clock size={13} className="text-gold-400" /> Hora *
@@ -301,9 +304,9 @@ export default function ReservasPage() {
                         <AlertCircle size={18} className="shrink-0 mt-0.5" /> {error}
                       </div>
                     )}
-                    {!allFull && (
+                    {!isDayClosed && !allFull && (
                       <button type="submit"
-                        disabled={status === "loading" || !form.time || isMonday(form.date)}
+                        disabled={status === "loading" || !form.time}
                         className="w-full py-4 bg-gold-400 hover:bg-gold-300 disabled:bg-carbon-700 disabled:text-cream-400 text-carbon-900 font-bold text-sm tracking-[0.2em] uppercase rounded-xl transition-all duration-300 hover:shadow-xl hover:shadow-gold-400/20 hover:-translate-y-0.5 flex items-center justify-center gap-3">
                         {status === "loading" ? (
                           <><span className="w-4 h-4 rounded-full border-2 border-carbon-900 border-t-transparent animate-spin" /> Enviando...</>
