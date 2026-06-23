@@ -21,7 +21,7 @@ export default async function AdminMenusPage() {
   const serializedDishes = dishes.map((d) => ({
     id: d.id, name: d.name, description: d.description, price: d.price,
     image: d.image, isActive: d.isActive, isDailyMenu: d.isDailyMenu,
-    categoryId: d.categoryId, order: d.order,
+    categoryId: d.categoryId, order: d.order, allergens: d.allergens,
     category: { id: d.category.id, name: d.category.name, slug: d.category.slug, order: d.category.order },
   }));
 

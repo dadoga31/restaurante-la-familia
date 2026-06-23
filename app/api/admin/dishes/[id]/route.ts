@@ -8,7 +8,7 @@ export async function PUT(
 ) {
   const { id } = await params;
   const body = await req.json();
-  const { name, description, price, image, isActive, isDailyMenu, categoryId, order } = body;
+  const { name, description, price, image, isActive, isDailyMenu, categoryId, order, allergens } = body;
 
   const dish = await prisma.dish.update({
     where: { id: parseInt(id) },
@@ -21,6 +21,7 @@ export async function PUT(
       isDailyMenu: Boolean(isDailyMenu),
       categoryId: parseInt(categoryId),
       order: parseInt(String(order ?? 0)),
+      allergens: Array.isArray(allergens) ? allergens : [],
     },
     include: { category: true },
   });

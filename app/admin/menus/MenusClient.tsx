@@ -3,14 +3,34 @@
 import { useCallback, useState } from "react";
 import {
   Plus, Pencil, Trash2, UtensilsCrossed,
-  Eye, EyeOff, Star, X, Check, ChevronDown, Upload, ImageOff,
+  Eye, EyeOff, Star, X, Check, ChevronDown, Upload, ImageOff, AlertTriangle,
 } from "lucide-react";
+
+// ── 14 alérgenos UE (Reglamento 1169/2011, Anexo II) ──────────────────────────
+export const ALLERGENS = [
+  { id: "gluten",       label: "Gluten",        emoji: "🌾" },
+  { id: "crustaceos",   label: "Crustáceos",    emoji: "🦐" },
+  { id: "huevos",       label: "Huevos",        emoji: "🥚" },
+  { id: "pescado",      label: "Pescado",        emoji: "🐟" },
+  { id: "cacahuetes",   label: "Cacahuetes",    emoji: "🥜" },
+  { id: "soja",         label: "Soja",           emoji: "🫘" },
+  { id: "lacteos",      label: "Lácteos",        emoji: "🥛" },
+  { id: "frutos_cascara", label: "Frutos secos", emoji: "🌰" },
+  { id: "apio",         label: "Apio",           emoji: "🌿" },
+  { id: "mostaza",      label: "Mostaza",        emoji: "🌱" },
+  { id: "sesamo",       label: "Sésamo",         emoji: "🫙" },
+  { id: "sulfitos",     label: "Sulfitos",       emoji: "🍷" },
+  { id: "altramuces",   label: "Altramuces",     emoji: "🌼" },
+  { id: "moluscos",     label: "Moluscos",       emoji: "🦑" },
+] as const;
+
+type AllergenId = typeof ALLERGENS[number]["id"];
 
 type Category = { id: number; name: string; slug: string; order: number };
 type Dish = {
   id: number; name: string; description: string | null; price: number;
   image: string | null; isActive: boolean; isDailyMenu: boolean;
-  categoryId: number; order: number;
+  categoryId: number; order: number; allergens: string[];
   category: Category;
 };
 
@@ -23,7 +43,7 @@ type Props = {
 const EMPTY_FORM = {
   name: "", description: "", price: "",
   image: "", isActive: true, isDailyMenu: false,
-  categoryId: "", order: "0",
+  categoryId: "", order: "0", allergens: [] as string[],
 };
 
 export default function MenusClient({ initialDishes, initialCategories, initialMenuImage }: Props) {
@@ -91,9 +111,19 @@ export default function MenusClient({ initialDishes, initialCategories, initialM
       name: dish.name, description: dish.description ?? "", price: String(dish.price),
       image: dish.image ?? "", isActive: dish.isActive, isDailyMenu: dish.isDailyMenu,
       categoryId: String(dish.categoryId), order: String(dish.order),
+      allergens: dish.allergens ?? [],
     });
     setError("");
     setModal("dish");
+  };
+
+  const toggleAllergen = (id: string) => {
+    setForm((p) => ({
+      ...p,
+      allergens: p.allergens.includes(id)
+        ? p.allergens.filter((a) => a !== id)
+        : [...p.allergens, id],
+    }));
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -290,6 +320,18 @@ export default function MenusClient({ initialDishes, initialCategories, initialM
                       </span>
                     )}
                   </div>
+                  {dish.allergens?.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {dish.allergens.map((a) => {
+                        const info = ALLERGENS.find((x) => x.id === a);
+                        return info ? (
+                          <span key={a} className="text-xs px-2 py-0.5 bg-amber-400/10 border border-amber-400/20 text-amber-300 rounded-full">
+                            {info.emoji} {info.label}
+                          </span>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
                 </div>
                 <div className="flex border-t border-carbon-700">
                   <button onClick={() => toggleActive(dish)}
@@ -323,7 +365,7 @@ export default function MenusClient({ initialDishes, initialCategories, initialM
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-carbon-700 bg-carbon-800/60">
-                    {["Plato", "Categoría", "Precio", "Menú del día", "Estado", "Acciones"].map((h) => (
+                    {["Plato", "Categoría", "Alérgenos", "Precio", "Menú del día", "Estado", "Acciones"].map((h) => (
                       <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-cream-400 tracking-wider uppercase whitespace-nowrap">
                         {h}
                       </th>
@@ -340,6 +382,22 @@ export default function MenusClient({ initialDishes, initialCategories, initialM
                         )}
                       </td>
                       <td className="px-4 py-3 text-cream-300 whitespace-nowrap">{dish.category.name}</td>
+                      <td className="px-4 py-3">
+                        {dish.allergens?.length > 0 ? (
+                          <div className="flex flex-wrap gap-1 max-w-[180px]">
+                            {dish.allergens.map((a) => {
+                              const info = ALLERGENS.find((x) => x.id === a);
+                              return info ? (
+                                <span key={a} title={info.label} className="text-base leading-none" aria-label={info.label}>
+                                  {info.emoji}
+                                </span>
+                              ) : null;
+                            })}
+                          </div>
+                        ) : (
+                          <span className="text-cream-400/30 text-xs">—</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-gold-400 font-semibold font-display whitespace-nowrap">
                         {dish.price.toFixed(2)}€
                       </td>
@@ -422,6 +480,35 @@ export default function MenusClient({ initialDishes, initialCategories, initialM
                     onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
                     rows={2} placeholder="Descripción del plato..." className={`${inputClass} resize-none`} />
                 </div>
+
+                {/* ── ALÉRGENOS ── */}
+                <div className="col-span-2">
+                  <label className={`${labelClass} flex items-center gap-2`}>
+                    <AlertTriangle size={12} className="text-amber-400" />
+                    Alérgenos <span className="text-cream-400/50 normal-case font-normal tracking-normal">(Reglamento UE 1169/2011)</span>
+                  </label>
+                  <div className="grid grid-cols-2 gap-1.5 p-3 rounded-xl bg-carbon-700/40 border border-carbon-600">
+                    {ALLERGENS.map(({ id, label, emoji }) => {
+                      const active = form.allergens.includes(id);
+                      return (
+                        <button key={id} type="button" onClick={() => toggleAllergen(id)}
+                          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all text-left border ${
+                            active
+                              ? "bg-amber-400/15 border-amber-400/40 text-amber-300"
+                              : "bg-carbon-700/50 border-carbon-600 text-cream-400 hover:text-cream-200 hover:border-carbon-500"
+                          }`}>
+                          <span className="text-base leading-none">{emoji}</span>
+                          <span className="leading-tight">{label}</span>
+                          {active && <Check size={11} className="ml-auto shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {form.allergens.length === 0 && (
+                    <p className="text-cream-400/40 text-xs mt-1.5">Sin alérgenos seleccionados · Marca todos los que apliquen</p>
+                  )}
+                </div>
+
                 <div className="col-span-2">
                   <label className={labelClass}>Imagen del plato</label>
                   {form.image ? (

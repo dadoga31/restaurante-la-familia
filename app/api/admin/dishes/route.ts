@@ -12,7 +12,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { name, description, price, image, isActive, isDailyMenu, categoryId, order } = body;
+  const { name, description, price, image, isActive, isDailyMenu, categoryId, order, allergens } = body;
 
   if (!name || !price || !categoryId) {
     return NextResponse.json({ error: "Nombre, precio y categoría son requeridos" }, { status: 400 });
@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
       isDailyMenu: isDailyMenu ?? false,
       categoryId: parseInt(categoryId),
       order: parseInt(String(order ?? 0)),
+      allergens: Array.isArray(allergens) ? allergens : [],
     },
     include: { category: true },
   });

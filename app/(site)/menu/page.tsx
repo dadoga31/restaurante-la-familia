@@ -2,9 +2,27 @@ import AnimateOnScroll from "@/components/AnimateOnScroll";
 import ParallaxSection from "@/components/ParallaxSection";
 import AmbientGlow from "@/components/AmbientGlow";
 import { prisma } from "@/lib/prisma";
-import { UtensilsCrossed } from "lucide-react";
+import { UtensilsCrossed, AlertTriangle } from "lucide-react";
 
 const HEADER_IMG = "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=1920&q=80";
+
+// Los 14 alérgenos de declaración obligatoria — Reglamento (UE) 1169/2011, Anexo II
+const ALLERGENS: Record<string, { label: string; emoji: string }> = {
+  gluten:         { label: "Gluten",        emoji: "🌾" },
+  crustaceos:     { label: "Crustáceos",    emoji: "🦐" },
+  huevos:         { label: "Huevos",        emoji: "🥚" },
+  pescado:        { label: "Pescado",       emoji: "🐟" },
+  cacahuetes:     { label: "Cacahuetes",    emoji: "🥜" },
+  soja:           { label: "Soja",          emoji: "🫘" },
+  lacteos:        { label: "Lácteos",       emoji: "🥛" },
+  frutos_cascara: { label: "Frutos secos",  emoji: "🌰" },
+  apio:           { label: "Apio",          emoji: "🌿" },
+  mostaza:        { label: "Mostaza",       emoji: "🌱" },
+  sesamo:         { label: "Sésamo",        emoji: "🫙" },
+  sulfitos:       { label: "Sulfitos",      emoji: "🍷" },
+  altramuces:     { label: "Altramuces",    emoji: "🌼" },
+  moluscos:       { label: "Moluscos",      emoji: "🦑" },
+};
 
 async function getMenu() {
   return prisma.category.findMany({
@@ -22,8 +40,6 @@ export default async function MenuPage() {
 
   return (
     <>
-
-      {/* Header con foto de fondo */}
       <ParallaxSection
         imageUrl={HEADER_IMG}
         overlayOpacity={0.80}
@@ -46,15 +62,39 @@ export default async function MenuPage() {
         </div>
       </ParallaxSection>
 
-      {/* Menu categories */}
       <main className="flex-1 bg-carbon-950 pb-28 relative z-10">
         <AmbientGlow />
         <div className="relative z-10 max-w-5xl mx-auto px-6">
+
+          {/* Aviso legal alérgenos — Reglamento (UE) 1169/2011 */}
+          <AnimateOnScroll animation="fade-up" className="pt-10">
+            <div className="flex items-start gap-3 p-4 rounded-xl border border-amber-400/20 bg-amber-400/5 mb-2">
+              <AlertTriangle size={16} className="text-amber-400 shrink-0 mt-0.5" />
+              <p className="text-amber-200/80 text-xs leading-relaxed">
+                <strong className="text-amber-300 font-semibold">Información sobre alérgenos</strong> —
+                Si padece alguna alergia o intolerancia alimentaria, informe a nuestro personal antes de realizar su pedido.
+                La información sobre los 14 alérgenos de declaración obligatoria (Reglamento UE 1169/2011) se indica en cada plato con los iconos correspondientes.
+                Nuestros platos se elaboran en cocinas donde pueden estar presentes trazas de los alérgenos indicados.
+              </p>
+            </div>
+          </AnimateOnScroll>
+
+          {/* Leyenda de alérgenos */}
+          <AnimateOnScroll animation="fade-up">
+            <div className="flex flex-wrap gap-2 py-4">
+              {Object.entries(ALLERGENS).map(([id, { label, emoji }]) => (
+                <span key={id} className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-carbon-800/60 border border-carbon-700 text-cream-400">
+                  <span className="text-sm">{emoji}</span> {label}
+                </span>
+              ))}
+            </div>
+          </AnimateOnScroll>
+
           {categories.map((cat, idx) => (
             <section
               key={cat.id}
               id={cat.slug}
-              className={`py-20 ${idx > 0 ? "border-t border-carbon-800" : ""}`}
+              className={`py-16 ${idx > 0 ? "border-t border-carbon-800" : ""}`}
             >
               {/* Category header */}
               <AnimateOnScroll animation="fade-up" className="mb-12">
@@ -116,6 +156,24 @@ export default async function MenuPage() {
                               {dish.description}
                             </p>
                           )}
+                          {/* Alérgenos del plato */}
+                          {dish.allergens && dish.allergens.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-3">
+                              {dish.allergens.map((a) => {
+                                const info = ALLERGENS[a];
+                                return info ? (
+                                  <span
+                                    key={a}
+                                    title={info.label}
+                                    className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/20 text-amber-300/80"
+                                  >
+                                    <span className="text-xs">{info.emoji}</span>
+                                    {info.label}
+                                  </span>
+                                ) : null;
+                              })}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </AnimateOnScroll>
@@ -124,9 +182,17 @@ export default async function MenuPage() {
               )}
             </section>
           ))}
+
+          {/* Pie legal */}
+          <div className="border-t border-carbon-800 pt-10 pb-4">
+            <p className="text-cream-400/40 text-xs text-center leading-relaxed">
+              Información de alérgenos conforme al Reglamento (UE) 1169/2011 y el Real Decreto 126/2015.
+              Para más información o si tiene dudas sobre los ingredientes de algún plato, consulte a nuestro personal.
+            </p>
+          </div>
+
         </div>
       </main>
-
     </>
   );
 }
