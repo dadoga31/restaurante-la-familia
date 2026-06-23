@@ -118,7 +118,7 @@ export default async function HomePage() {
       </section>
 
       {/* ══════════════════ MENÚ DEL DÍA ══════════════════ */}
-      {dailyMenu.length > 0 && (
+      {(dailyMenu.length > 0 || !!dailyMenuImage) && (
         <ParallaxSection
           imageUrl={DAILY_IMG}
           overlayOpacity={0.88}

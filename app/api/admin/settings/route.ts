@@ -21,7 +21,8 @@ export async function PATCH(req: NextRequest) {
       update: { value },
       create: { key, value },
     });
-    revalidatePath("/");
+    revalidatePath("/", "page");
+    revalidatePath("/menu", "page");
     return NextResponse.json(setting);
   } catch {
     return NextResponse.json({ error: "Tabla no creada aún — ejecuta el SQL en Supabase" }, { status: 503 });
