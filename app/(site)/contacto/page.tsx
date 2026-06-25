@@ -54,7 +54,7 @@ export default function ContactoPage() {
                   <div className="space-y-4">
                     {[
                       { href: "tel:+34671091781", icon: <Phone size={14} />, label: "Teléfono", val: "671 091 781" },
-                      { href: "mailto:hola@lafamilia.es", icon: <Mail size={14} />, label: "Email", val: "hola@lafamilia.es" },
+                      { href: "mailto:info@restaurantelafamilia.com", icon: <Mail size={14} />, label: "Email", val: "info@restaurantelafamilia.com" },
                     ].map(({ href, icon, label, val }) => (
                       <a key={label} href={href}
                         className="flex items-center gap-3 text-cream-300 hover:text-gold-400 transition-colors group">
