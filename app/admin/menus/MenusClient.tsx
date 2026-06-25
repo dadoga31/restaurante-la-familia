@@ -6,6 +6,35 @@ import {
   Eye, EyeOff, Star, X, Check, ChevronDown, Upload, ImageOff, AlertTriangle,
 } from "lucide-react";
 
+// Compress + resize image in the browser before uploading.
+// Keeps longest side ≤ maxPx and encodes as JPEG at the given quality.
+// Bypasses Vercel's 4.5 MB serverless body limit for mobile photos.
+async function compressImage(file: File, maxPx = 1920, quality = 0.82): Promise<File> {
+  return new Promise((resolve) => {
+    const img = new window.Image();
+    const src = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(src);
+      const ratio = Math.min(1, maxPx / Math.max(img.width, img.height));
+      const w = Math.round(img.width * ratio);
+      const h = Math.round(img.height * ratio);
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { resolve(file); return; }
+      ctx.drawImage(img, 0, 0, w, h);
+      canvas.toBlob((blob) => {
+        if (!blob) { resolve(file); return; }
+        const name = file.name.replace(/\.[^.]+$/, "") + ".jpg";
+        resolve(new File([blob], name, { type: "image/jpeg" }));
+      }, "image/jpeg", quality);
+    };
+    img.onerror = () => { URL.revokeObjectURL(src); resolve(file); };
+    img.src = src;
+  });
+}
+
 // ── 14 alérgenos UE (Reglamento 1169/2011, Anexo II) ──────────────────────────
 export const ALLERGENS = [
   { id: "gluten",       label: "Gluten",        emoji: "🌾" },
@@ -59,6 +88,7 @@ export default function MenusClient({ initialDishes, initialCategories, initialM
   const [error, setError] = useState("");
   const [menuImage, setMenuImage] = useState(initialMenuImage);
   const [uploadingMenu, setUploadingMenu] = useState(false);
+  const [menuImageError, setMenuImageError] = useState("");
 
   const refetchDishes = useCallback(async () => {
     setLoading(true);
@@ -71,18 +101,26 @@ export default function MenusClient({ initialDishes, initialCategories, initialM
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadingMenu(true);
+    setMenuImageError("");
     try {
+      const compressed = await compressImage(file);
       const fd = new FormData();
-      fd.append("file", file);
+      fd.append("file", compressed);
       const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-      if (!res.ok) throw new Error((await res.json()).error);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({ error: `Error ${res.status}` }));
+        throw new Error(body.error || `Error ${res.status}`);
+      }
       const { url } = await res.json();
-      setMenuImage(url);
-      await fetch("/api/admin/settings", {
+      const settingsRes = await fetch("/api/admin/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ key: "daily_menu_image", value: url }),
       });
+      if (!settingsRes.ok) throw new Error("No se pudo guardar en la base de datos");
+      setMenuImage(url);
+    } catch (err: unknown) {
+      setMenuImageError(err instanceof Error ? err.message : "Error al subir la foto");
     } finally {
       setUploadingMenu(false);
       e.target.value = "";
@@ -91,6 +129,7 @@ export default function MenusClient({ initialDishes, initialCategories, initialM
 
   const removeMenuImage = async () => {
     setMenuImage("");
+    setMenuImageError("");
     await fetch("/api/admin/settings", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -205,7 +244,7 @@ export default function MenusClient({ initialDishes, initialCategories, initialM
             <h2 className="font-display font-semibold text-cream-100 flex items-center gap-2">
               <Upload size={16} className="text-gold-400" /> Foto del Menú del Día
             </h2>
-            <p className="text-cream-400 text-xs mt-0.5">Se muestra en la página principal en lugar de las tarjetas de platos</p>
+            <p className="text-cream-400 text-xs mt-0.5">Se muestra en la página principal · Se comprime automáticamente al subir</p>
           </div>
           {menuImage && (
             <button onClick={removeMenuImage}
@@ -214,6 +253,12 @@ export default function MenusClient({ initialDishes, initialCategories, initialM
             </button>
           )}
         </div>
+        {menuImageError && (
+          <div className="flex items-start gap-2 p-3 rounded-lg bg-danger/10 border border-danger/30 text-danger text-sm">
+            <AlertTriangle size={15} className="shrink-0 mt-0.5" />
+            <span>{menuImageError}</span>
+          </div>
+        )}
         {menuImage ? (
           <div className="relative rounded-xl overflow-hidden border border-carbon-600 group max-h-72">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -243,7 +288,7 @@ export default function MenusClient({ initialDishes, initialCategories, initialM
               <>
                 <Upload size={28} className="text-cream-400/40" />
                 <span className="text-cream-200 text-sm font-medium">Subir foto del menú del día</span>
-                <span className="text-cream-400/50 text-xs">JPG, PNG, WEBP · Se mostrará en la web automáticamente</span>
+                <span className="text-cream-400/50 text-xs">JPG, PNG, WEBP — cualquier tamaño, se comprime al subir</span>
               </>
             )}
             <input type="file" accept="image/*" className="hidden" onChange={handleMenuImageUpload} disabled={uploadingMenu} />
