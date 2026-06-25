@@ -2,42 +2,40 @@ import Link from "next/link";
 import AnimateOnScroll from "@/components/AnimateOnScroll";
 import ParallaxSection from "@/components/ParallaxSection";
 import AmbientGlow from "@/components/AmbientGlow";
+import DailyMenuSection from "@/components/DailyMenuSection";
 import { prisma } from "@/lib/prisma";
 import { ChevronDown, UtensilsCrossed, Calendar, MapPin, Star } from "lucide-react";
 
-// Unsplash photo IDs – swap for real restaurant photos any time
-const HERO_IMG    = "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1920&q=80";
-const DAILY_IMG   = "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1920&q=80";
-const CTA_IMG     = "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1920&q=80";
+const HERO_IMG = "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1920&q=80";
+const CTA_IMG  = "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1920&q=80";
 
-async function getDailyMenu() {
-  const dishes = await prisma.dish.findMany({
-    where: { isDailyMenu: true, isActive: true },
-    include: { category: true },
-    orderBy: [{ category: { order: "asc" } }, { order: "asc" }],
-  });
-  const grouped = new Map<number, { name: string; dishes: typeof dishes }>();
-  for (const dish of dishes) {
-    const key = dish.categoryId;
-    if (!grouped.has(key)) grouped.set(key, { name: dish.category.name, dishes: [] });
-    grouped.get(key)!.dishes.push(dish);
-  }
-  return Array.from(grouped.values());
-}
-
-async function getDailyMenuImage(): Promise<string | null> {
+// Fetch initial data for SSR — the client component re-fetches on every load for instant updates.
+async function getInitialDailyMenu() {
   try {
-    const setting = await prisma.siteSetting.findUnique({ where: { key: "daily_menu_image" } });
-    return setting?.value || null;
+    const [dishes, setting] = await Promise.all([
+      prisma.dish.findMany({
+        where: { isDailyMenu: true, isActive: true },
+        include: { category: { select: { name: true, order: true } } },
+        orderBy: [{ category: { order: "asc" } }, { order: "asc" }],
+      }),
+      prisma.siteSetting.findUnique({ where: { key: "daily_menu_image" } }).catch(() => null),
+    ]);
+    const grouped = new Map<number, { name: string; dishes: { id: number; name: string; description: string | null; price: number }[] }>();
+    for (const dish of dishes) {
+      if (!grouped.has(dish.categoryId))
+        grouped.set(dish.categoryId, { name: dish.category.name, dishes: [] });
+      grouped.get(dish.categoryId)!.dishes.push({ id: dish.id, name: dish.name, description: dish.description, price: dish.price });
+    }
+    return { image: setting?.value || null, menu: Array.from(grouped.values()) };
   } catch {
-    return null;
+    return { image: null, menu: [] };
   }
 }
 
 export const revalidate = 300;
 
 export default async function HomePage() {
-  const [dailyMenu, dailyMenuImage] = await Promise.all([getDailyMenu(), getDailyMenuImage()]);
+  const { image: dailyMenuImage, menu: dailyMenu } = await getInitialDailyMenu();
 
   return (
     <>
@@ -118,96 +116,7 @@ export default async function HomePage() {
       </section>
 
       {/* ══════════════════ MENÚ DEL DÍA ══════════════════ */}
-      {(dailyMenu.length > 0 || !!dailyMenuImage) && (
-        <ParallaxSection
-          imageUrl={DAILY_IMG}
-          overlayOpacity={0.88}
-          overlayColor="10,8,6"
-          speed={0.2}
-          className="py-28 px-6"
-        >
-          <div className="max-w-4xl mx-auto">
-            <AnimateOnScroll animation="fade-up" className="text-center mb-14">
-              <span className="text-gold-400 text-xs tracking-[0.45em] uppercase font-medium">Hoy en cocina</span>
-              <h2 className="font-display font-bold text-3xl sm:text-4xl text-cream-50 mt-3 tracking-wide">
-                Menú del Día
-              </h2>
-              <div className="mt-5 h-px w-14 bg-gold-400/50 mx-auto line-reveal" />
-            </AnimateOnScroll>
-
-            {dailyMenuImage ? (
-              /* ── Foto del menú del día ── */
-              <AnimateOnScroll animation="fade-up" delay={100}>
-                <div className="relative max-w-2xl mx-auto">
-                  {/* Corner accents */}
-                  <div className="absolute -top-3 -left-3 w-8 h-8 border-l-2 border-t-2 border-gold-400/50 rounded-tl-sm pointer-events-none" />
-                  <div className="absolute -top-3 -right-3 w-8 h-8 border-r-2 border-t-2 border-gold-400/50 rounded-tr-sm pointer-events-none" />
-                  <div className="absolute -bottom-3 -left-3 w-8 h-8 border-l-2 border-b-2 border-gold-400/50 rounded-bl-sm pointer-events-none" />
-                  <div className="absolute -bottom-3 -right-3 w-8 h-8 border-r-2 border-b-2 border-gold-400/50 rounded-br-sm pointer-events-none" />
-                  {/* Photo */}
-                  <div className="rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={dailyMenuImage}
-                      alt="Menú del día"
-                      className="w-full h-auto object-cover"
-                    />
-                  </div>
-                </div>
-              </AnimateOnScroll>
-            ) : (
-              /* ── Tarjetas de platos (fallback) ── */
-              <div className="space-y-8">
-                {dailyMenu.map((group, gi) => (
-                  <div key={group.name}>
-                    {gi > 0 && (
-                      <div className="flex items-center gap-4 mb-8">
-                        <div className="flex-1 h-px bg-white/10" />
-                        <div className="w-1 h-1 rounded-full bg-gold-400/40" />
-                        <div className="flex-1 h-px bg-white/10" />
-                      </div>
-                    )}
-                    <AnimateOnScroll animation="fade-up" delay={gi * 80} className="mb-6 text-center">
-                      <p className="font-display text-base tracking-[0.35em] uppercase font-semibold text-gold-400">
-                        {group.name}
-                      </p>
-                      <div className="mt-2.5 h-px w-10 bg-gold-400/40 mx-auto" />
-                    </AnimateOnScroll>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:[&>*:last-child:nth-child(odd)]:col-span-2 sm:[&>*:last-child:nth-child(odd)]:max-w-[calc(50%-0.5rem)] sm:[&>*:last-child:nth-child(odd)]:mx-auto">
-                      {group.dishes.map((dish, i) => (
-                        <AnimateOnScroll key={dish.id} animation="fade-up" delay={gi * 80 + i * 80}>
-                          <div className="card-hover flex items-start justify-between gap-4 p-5 rounded-xl border border-white/10 bg-black/50 backdrop-blur-sm hover:border-gold-400/30">
-                            <div className="flex-1 min-w-0">
-                              <p className="text-cream-100 font-semibold">{dish.name}</p>
-                              {dish.description && (
-                                <p className="text-cream-400 text-sm mt-1 leading-relaxed line-clamp-2">
-                                  {dish.description}
-                                </p>
-                              )}
-                            </div>
-                            <span className="text-gold-400 font-bold text-sm shrink-0 font-display">
-                              {dish.price.toFixed(2)}€
-                            </span>
-                          </div>
-                        </AnimateOnScroll>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <AnimateOnScroll animation="fade-up" delay={400} className="text-center mt-10">
-              <Link
-                href="/menu"
-                className="inline-flex items-center gap-2 text-gold-400 hover:text-gold-300 text-sm tracking-wider uppercase font-medium border-b border-gold-400/30 hover:border-gold-300/60 pb-0.5 transition-all"
-              >
-                Ver carta completa →
-              </Link>
-            </AnimateOnScroll>
-          </div>
-        </ParallaxSection>
-      )}
+      <DailyMenuSection initialImage={dailyMenuImage} initialMenu={dailyMenu} />
 
       {/* ══════════════════ EXPERIENCIA ══════════════════ */}
       <section className="py-28 px-6 bg-carbon-950 relative z-10">
