@@ -244,9 +244,9 @@ export default function ReservasPage() {
                           No quedan plazas para {guests} {guests === 1 ? "persona" : "personas"}.<br />
                           Para consultar disponibilidad llámanos:
                         </p>
-                        <a href="tel:+34626261689"
+                        <a href="tel:+34671091781"
                           className="inline-flex items-center gap-2 px-5 py-2.5 bg-gold-400/10 border border-gold-400/40 text-gold-400 rounded-xl text-sm font-semibold hover:bg-gold-400/20 transition-all">
-                          <Phone size={15} /> 626 261 689
+                          <Phone size={15} /> 671 091 781
                         </a>
                       </div>
                     )}

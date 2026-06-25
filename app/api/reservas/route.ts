@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
   const totalBooked = (bookedGuests._sum.guests ?? 0) + guests;
   if (totalBooked > maxGuests) {
     return NextResponse.json(
-      { error: `No hay plaza para ${guests} personas en este horario. Llama al 626 261 689 para consultar disponibilidad.` },
+      { error: `No hay plaza para ${guests} personas en este horario. Llama al 671 091 781 para consultar disponibilidad.` },
       { status: 409 }
     );
   }

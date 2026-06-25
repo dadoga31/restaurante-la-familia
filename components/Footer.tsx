@@ -41,12 +41,12 @@ export default function Footer() {
             <ul className="space-y-3">
               <li className="flex items-start gap-3 text-cream-400 text-sm">
                 <MapPin size={16} className="mt-0.5 shrink-0 text-gold-400" />
-                <span>C/ Juan Francisco de Higueras Payo, 45<br />Yuncos, Toledo</span>
+                <span>C/ Doctor Juan Francisco de Higueras Payo, 45<br />Yuncos, Toledo</span>
               </li>
               <li className="flex items-center gap-3 text-cream-400 text-sm">
                 <Phone size={16} className="shrink-0 text-gold-400" />
-                <a href="tel:+34626261689" className="hover:text-cream-100 transition-colors">
-                  626 261 689
+                <a href="tel:+34671091781" className="hover:text-cream-100 transition-colors">
+                  671 091 781
                 </a>
               </li>
               <li className="flex items-center gap-3 text-cream-400 text-sm">
@@ -66,9 +66,9 @@ export default function Footer() {
             <ul className="space-y-2">
               {[
                 { day: "Lunes", hours: "Cerrado" },
-                { day: "Mar — Vie", hours: "13:00 – 16:00 · 20:00 – 23:30" },
-                { day: "Sábado", hours: "13:00 – 16:30 · 20:00 – 00:00" },
-                { day: "Domingo", hours: "13:00 – 16:30" },
+                { day: "Mar — Mié", hours: "9:00 – 18:00" },
+                { day: "Jue — Sáb", hours: "9:00 – 00:00" },
+                { day: "Domingo", hours: "9:00 – 18:00" },
               ].map(({ day, hours }) => (
                 <li key={day} className="flex items-start gap-3 text-sm">
                   <Clock size={14} className="mt-0.5 shrink-0 text-gold-400" />

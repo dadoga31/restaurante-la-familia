@@ -39,7 +39,7 @@ export default function ContactoPage() {
                     <MapPin size={15} className="text-gold-400" /> Cómo llegar
                   </h2>
                   <div className="space-y-3 text-sm text-cream-400 leading-relaxed">
-                    <p><span className="text-cream-200 font-medium">Dirección:</span> C/ Juan Francisco de Higueras Payo, 45<br />Yuncos, Toledo</p>
+                    <p><span className="text-cream-200 font-medium">Dirección:</span> C/ Doctor Juan Francisco de Higueras Payo, 45<br />Yuncos, Toledo</p>
                     <p><span className="text-cream-200 font-medium">En coche:</span> A-42 dirección Toledo, salida Yuncos</p>
                     <p><span className="text-cream-200 font-medium">Parking:</span> Aparcamiento gratuito en la puerta</p>
                   </div>
@@ -53,7 +53,7 @@ export default function ContactoPage() {
                   </h2>
                   <div className="space-y-4">
                     {[
-                      { href: "tel:+34626261689", icon: <Phone size={14} />, label: "Teléfono", val: "626 261 689" },
+                      { href: "tel:+34671091781", icon: <Phone size={14} />, label: "Teléfono", val: "671 091 781" },
                       { href: "mailto:hola@lafamilia.es", icon: <Mail size={14} />, label: "Email", val: "hola@lafamilia.es" },
                     ].map(({ href, icon, label, val }) => (
                       <a key={label} href={href}
@@ -70,7 +70,7 @@ export default function ContactoPage() {
                   </div>
 
                   <a
-                    href="https://wa.me/34626261689?text=Hola%2C%20me%20gustar%C3%ADa%20hacer%20una%20consulta%20o%20reserva"
+                    href="https://wa.me/34671091781?text=Hola%2C%20me%20gustar%C3%ADa%20hacer%20una%20consulta%20o%20reserva"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="mt-5 flex items-center gap-3 w-full px-5 py-3 rounded-xl font-semibold text-sm text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
@@ -106,10 +106,13 @@ export default function ContactoPage() {
                   </h2>
                   <div className="space-y-2.5">
                     {[
-                      { day: "Lunes", hours: "Cerrado", closed: true },
-                      { day: "Martes — Viernes", hours: "13:00 – 16:00 · 20:00 – 23:30", closed: false },
-                      { day: "Sábado", hours: "13:00 – 16:30 · 20:00 – 00:00", closed: false },
-                      { day: "Domingo", hours: "13:00 – 16:30", closed: false },
+                      { day: "Lunes",              hours: "Cerrado",        closed: true  },
+                      { day: "Martes",             hours: "9:00 – 18:00",   closed: false },
+                      { day: "Miércoles",          hours: "9:00 – 18:00",   closed: false },
+                      { day: "Jueves",             hours: "9:00 – 00:00",   closed: false },
+                      { day: "Viernes",            hours: "9:00 – 00:00",   closed: false },
+                      { day: "Sábado",             hours: "9:00 – 00:00",   closed: false },
+                      { day: "Domingo",            hours: "9:00 – 18:00",   closed: false },
                     ].map(({ day, hours, closed }) => (
                       <div key={day} className="flex justify-between items-center py-2 border-b border-carbon-700 last:border-0 text-sm">
                         <span className="text-cream-200 font-medium">{day}</span>
@@ -126,11 +129,11 @@ export default function ContactoPage() {
               <AnimateOnScroll animation="fade-left" delay={80}>
                 <div className="rounded-2xl overflow-hidden border border-carbon-700 h-[400px] lg:h-[480px]">
                   <iframe
-                    src="https://maps.google.com/maps?q=Calle+Juan+Francisco+de+Higueras+Payo+45+Yuncos+Toledo&output=embed"
+                    src="https://maps.google.com/maps?q=C%2F+Doctor+Juan+Francisco+de+Higueras+Payo+45+Yuncos+Toledo&output=embed"
                     width="100%" height="100%"
                     style={{ border: 0, filter: "invert(90%) hue-rotate(180deg) saturate(0.25) brightness(0.9)" }}
                     allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade"
-                    title="Ubicación La Familia Restaurante"
+                    title="Ubicación Restaurante La Familia — Yuncos, Toledo"
                   />
                 </div>
               </AnimateOnScroll>

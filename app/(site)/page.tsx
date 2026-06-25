@@ -71,7 +71,7 @@ export default async function HomePage() {
           <div className="hero-badge flex items-center justify-center gap-4 mb-8">
             <div className="h-px w-12 sm:w-20 bg-gradient-to-r from-transparent to-gold-400/70" />
             <span className="text-gold-400 text-xs tracking-[0.45em] uppercase font-medium">
-              Alta Cocina · Madrid
+              Alta Cocina · Yuncos, Toledo
             </span>
             <div className="h-px w-12 sm:w-20 bg-gradient-to-l from-transparent to-gold-400/70" />
           </div>
@@ -226,7 +226,7 @@ export default async function HomePage() {
               {
                 icon: <UtensilsCrossed size={26} />,
                 title: "Cocina de Mercado",
-                text: "Ingredientes seleccionados cada mañana en los mejores mercados de Madrid. Temporada en cada plato.",
+                text: "Ingredientes seleccionados cada día en los mejores mercados de la zona. Temporada en cada plato.",
               },
               {
                 icon: <Star size={26} />,
@@ -235,8 +235,8 @@ export default async function HomePage() {
               },
               {
                 icon: <MapPin size={26} />,
-                title: "Corazón de Madrid",
-                text: "En plena Gran Vía. Fácil acceso, aparcamiento cercano y transporte a un paso.",
+                title: "Yuncos, Toledo",
+                text: "A pocos minutos de la A-42. Fácil acceso y aparcamiento gratuito en la puerta.",
               },
             ].map(({ icon, title, text }, i) => (
               <AnimateOnScroll key={title} animation="fade-up" delay={i * 120}>
