@@ -39,7 +39,7 @@ export default function ContactoPage() {
                     <MapPin size={15} className="text-gold-400" /> Cómo llegar
                   </h2>
                   <div className="space-y-3 text-sm text-cream-400 leading-relaxed">
-                    <p><span className="text-cream-200 font-medium">Dirección:</span> C/ Doctor Juan Francisco de Higueras Payo, 45<br />Yuncos, Toledo</p>
+                    <p><span className="text-cream-200 font-medium">Dirección:</span> C/ Doctor Juan Francisco de Higueras, 45<br />Yuncos, Toledo</p>
                     <p><span className="text-cream-200 font-medium">En coche:</span> A-42 dirección Toledo, salida Yuncos</p>
                     <p><span className="text-cream-200 font-medium">Parking:</span> Aparcamiento gratuito en la puerta</p>
                   </div>

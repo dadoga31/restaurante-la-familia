@@ -41,7 +41,7 @@ export default function Footer() {
             <ul className="space-y-3">
               <li className="flex items-start gap-3 text-cream-400 text-sm">
                 <MapPin size={16} className="mt-0.5 shrink-0 text-gold-400" />
-                <span>C/ Doctor Juan Francisco de Higueras Payo, 45<br />Yuncos, Toledo</span>
+                <span>C/ Doctor Juan Francisco de Higueras, 45<br />Yuncos, Toledo</span>
               </li>
               <li className="flex items-center gap-3 text-cream-400 text-sm">
                 <Phone size={16} className="shrink-0 text-gold-400" />
