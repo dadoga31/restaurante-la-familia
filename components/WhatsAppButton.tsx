@@ -3,7 +3,7 @@
 export default function WhatsAppButton() {
   return (
     <a
-      href="https://wa.me/34626261689?text=Hola%2C%20me%20gustar%C3%ADa%20hacer%20una%20consulta%20o%20reserva"
+      href="https://wa.me/34671091781?text=Hola%2C%20me%20gustar%C3%ADa%20hacer%20una%20consulta%20o%20reserva"
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Contactar por WhatsApp"
